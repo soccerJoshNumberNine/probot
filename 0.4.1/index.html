@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Home - Documentation</title>
+
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+<body>
+
+<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+<label for="nav-trigger" class="navicon-button x">
+  <div class="navicon"></div>
+</label>
+
+<label for="nav-trigger" class="overlay"></label>
+
+<nav>
+    <li class="nav-link nav-home-link"><a href="index.html">Home</a></li><li class="nav-heading">Classes</li><li class="nav-heading"><span class="nav-item-type type-class">C</span><span class="nav-item-name"><a href="Context.html">Context</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Context.html#issue">issue</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Context.html#repo">repo</a></span></li><li class="nav-heading"><span class="nav-item-type type-class">C</span><span class="nav-item-name"><a href="Robot.html">Robot</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Robot.html#auth">auth</a></span></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="Robot.html#on">on</a></span></li><li class="nav-heading"><a href="global.html">Globals</a></li><li class="nav-item"><span class="nav-item-type type-function">F</span><span class="nav-item-name"><a href="global.html#findPrivateKey">findPrivateKey</a></span></li>
+</nav>
+
+<div id="main">
+    
+
+    
+
+
+
+    
+
+
+
+
+
+
+
+
+
+    
+
+
+    <section class="readme">
+        <article><h1>Plugins</h1><p>A plugin is just a <a href="https://nodejs.org/api/modules.html">Node.js module</a> that exports a function:</p>
+<pre class="prettyprint source lang-js"><code>module.exports = robot => {
+  // your code here
+};</code></pre><p>The <code>robot</code> parameter is an instance of <a href="/lib/robot.js"><code>Robot</code></a> and gives you access to all of the bot goodness.</p>
+<h2>Receiving GitHub webhooks</h2><p><a href="https://developer.github.com/webhooks/">GitHub webhooks</a> are fired for almost every significant action that users take on GitHub, whether it's pushes to code, opening or closing issues, opening or merging pull requests, or commenting on a discussion.</p>
+<p>Many robots will spend their entire day responding to these actions. <code>robot.on</code> will listen for any GitHub webhook events:</p>
+<pre class="prettyprint source lang-js"><code>module.exports = robot => {
+  robot.on('push', async (event, context) => {
+    // Code was pushed to the repo, what should we do with it?
+    robot.log(event);
+  });
+};</code></pre><p>The robot can listen to any of the <a href="https://developer.github.com/webhooks/#events">GitHub webhook events</a>. <code>event</code> object includes all of the information about the event that was triggered, and <code>event.payload</code> has the payload delivered by GitHub.</p>
+<p>Most events also include an &quot;action&quot;. For example, the <a href="https://developer.github.com/v3/activity/events/types/#issuesevent"><code>issues</code></a> event has actions of <code>assigned</code>, <code>unassigned</code>, <code>labeled</code>, <code>unlabeled</code>, <code>opened</code>, <code>edited</code>, <code>milestoned</code>, <code>demilestoned</code>, <code>closed</code>, and <code>reopened</code>. Often, your bot will only care about one type of action, so you can append it to the event name with a <code>.</code>:</p>
+<pre class="prettyprint source lang-js"><code>module.exports = robot => {
+  robot.on('issues.opened', async (event, context) => {
+    // An issue was just opened.
+  });
+};</code></pre><h2>Interacting with GitHub</h2><p>Probot uses <a href="https://developer.github.com/early-access/integrations/">GitHub Integrations</a>. An integration is a first-class actor on GitHub, like a user (e.g. <a href="https://github/defunkt">@defunkt</a>) or a organization (e.g. <a href="https://github.com/github">@github</a>). The integration is given access to a repository or repositories by being &quot;installed&quot; on a user or organization account and can perform actions through the API like <a href="https://developer.github.com/v3/issues/comments/#create-a-comment">commenting on an issue</a> or <a href="https://developer.github.com/v3/repos/statuses/#create-a-status">creating a status</a>.</p>
+<p><code>context.github</code> is an authenticated GitHub client that can be used to make API calls. It is an instance of the <a href="https://github.com/mikedeboer/node-github">github Node.js module</a>, which wraps the <a href="https://developer.github.com/v3/">GitHub API</a> and allows you to do almost anything programmatically that you can do through a web browser.</p>
+<p>Here is an example of an autoresponder plugin that comments on opened issues:</p>
+<pre class="prettyprint source lang-js"><code>module.exports = robot => {
+  robot.on('issues.opened', async (event, context) => {
+    // `context` extracts information from the event, which can be passed to
+    // GitHub API calls. This will return:
+    //   {owner: 'yourname', repo: 'yourrepo', number: 123, body: 'Hello World!}
+    const params = context.issue({body: 'Hello World!'})
+
+    // Post a comment on the issue
+    return context.github.issues.createComment(params);
+  });
+}</code></pre><p>See the <a href="https://mikedeboer.github.io/node-github/">full API docs</a> to see all the ways you can interact with GitHub. Some API endpoints are not available on GitHub Integrations yet, so check <a href="https://developer.github.com/early-access/integrations/available-endpoints/">which ones are available</a> first.</p>
+<h3>Pagination</h3><p>Many GitHub API endpoints are paginated. The <code>github.paginate</code> method can be used to get each page of the results.</p>
+<pre class="prettyprint source lang-js"><code>context.github.paginate(context.github.issues.getAll(context.repo()), issues => {
+  issues.forEach(issue => {
+    robot.console.log('Issue: %s', issue.title);
+  });
+});</code></pre><h2>Running plugins</h2><p>Before you can run your plugin against GitHub, you'll need to set up your <a href="development.md">development environment</a> and configure a GitHub Integration for testing. You will the the ID and private key of a GitHub Integration to run the bot.</p>
+<p>Once you have an integration created, install <code>probot</code>:</p>
+<pre class="prettyprint source"><code>$ npm install -g probot</code></pre><p>and run your bot, replacing <code>9999</code> and <code>private-key.pem</code> below with the ID and path to the private key of your integration.</p>
+<pre class="prettyprint source"><code>$ probot run -i 9999 -P private-key.pem ./autoresponder.js
+Listening on http://localhost:3000</code></pre><h2>Publishing your bot</h2><p>Plugins can be published in NPM modules, which can either be deployed as stand-alone bots, or combined with other plugins.</p>
+<p>Use the <a href="https://github.com/probot/plugin-template">plugin-template</a> repository to get started building your plugin as a node module.</p>
+<pre class="prettyprint source"><code>$ curl -L https://github.com/probot/plugin-template/archive/master.tar.gz | tar xvz
+$ mv plugin-template probot-myplugin && cd probot-myplugin</code></pre><h2>Next</h2><ul>
+<li><a href="api.md">See the full Probot API</a></li>
+<li><a href="development.md">Tips for development</a></li>
+<li><a href="deployment.md">Deploy your plugin</a></li>
+</ul></article>
+    </section>
+
+
+
+
+
+
+</div>
+
+<br class="clear">
+
+<footer>
+    Generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Sat Apr 29 2017 10:42:19 GMT-0500 (CDT) using the Minami theme.
+</footer>
+
+<script>prettyPrint();</script>
+<script src="scripts/linenumber.js"></script>
+</body>
+</html>
